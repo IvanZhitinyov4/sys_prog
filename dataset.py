@@ -1,6 +1,5 @@
 import pandas as pd
 from matplotlib import pyplot as plt
-from sklearn import *
 from sklearn import preprocessing
 import seaborn as sns
 import tensorflow as tf
@@ -11,14 +10,25 @@ class Dataset:
     def __init__(self, df):
         self.df = df
 
-    def info(self):
+    def info(self):  #Возвращает информацию о типе данных и количестве пропущенных значений в каждом столбце.
         return {
             'Type': self.df.dtypes,
             'Missing values': self.df.isnull().sum()
         }
 
+    """
+    Определяет, какие столбцы являются категориальными
+    threshold_of_num_cat (int): Порог для определения категориальности столбца.
+    Возвращает список категориальных столбцов.
+    """
+
     def check_categorical(self, threshold_of_num_cat: int = None):
         threshold_of_num_cat = threshold_of_num_cat or self.df.shape[0]
+        """
+        Проверяет, является ли столбец категориальным.
+        column (pd.Series): Столбец DataFrame.
+        Возвращает True, если столбец категориальный, иначе False.
+        """
 
         def _is_categorical(column):
             if column.dtype in ('category', 'bool'):
@@ -27,10 +37,15 @@ class Dataset:
                 return len(column.astype(str).unique()) <= threshold_of_num_cat
             elif column.dtype == 'float64':
                 return len(column.round(10).unique()) <= threshold_of_num_cat
-            # other datatypes: 'int64', 'float64', 'timedelta[ns]'
             return len(column.unique()) <= threshold_of_num_cat
 
         return [column for column in self.df.columns if _is_categorical(column)]
+
+    """
+    Преобразует категориальные столбцы в числовые.
+    categorical_names (list): Список категориальных столбцов.
+    strategy (str): Стратегия преобразования ('Onehot' или 'Label').
+    """
 
     def eval_categorical(self, categorical_names, strategy='Onehot'):
         if strategy == 'Onehot':
@@ -48,10 +63,21 @@ class Dataset:
         else:
             raise ValueError("strategy must be 'Onehot' or 'Label'")
 
+    """
+    Подготавливает данные: заполняет пропущенные значения и преобразует категориальные столбцы.
+    strategy (str): Стратегия преобразования ('Onehot' или 'Label').
+    """
+
     def preparation(self, threshold_of_num_cat: int = None, strategy='Onehot'):
+
         self.fill_missing(strategy="mean")
         categorical = self.check_categorical(threshold_of_num_cat=threshold_of_num_cat)
         self.eval_categorical(categorical, strategy)
+
+    """
+    Заполняет пропущенные значения в числовых столбцах.
+    value (any): Значение для заполнения, если стратегия 'constant'.
+    """
 
     def fill_missing(self, strategy='mean', value=None):
         for column in self.df.select_dtypes(include=['float64', 'int64']).columns:
@@ -65,12 +91,24 @@ class Dataset:
                         if value is not None:
                             self.df[column].fillna(value, inplace=True)
 
+    """
+    Отображает графики для столбцов данных.
+    plot_type (str): Тип графика ('Hist' или 'Box').
+    column (str): Имя столбца для отображения. Если None, отображаются все столбцы.
+    """
+
     def display(self, plot_type="Hist", column=None):
         if column:
             self._display_column_plot(plot_type, column)
         else:
             self._display_all_columns_plot(plot_type)
         plt.show()
+
+    """
+    Отображает график для конкретного столбца.
+    plot_type (str): Тип графика ('Hist' или 'Box').
+    column (str): Имя столбца для отображения.
+    """
 
     def _display_column_plot(self, plot_type, column):
         match plot_type:
@@ -81,7 +119,7 @@ class Dataset:
             case _:
                 raise ValueError
 
-    def _display_all_columns_plot(self, plot_type):
+    def _display_all_columns_plot(self, plot_type):  #Отображает график всех столбцов
         match plot_type:
             case "Hist":
                 self.df.hist(figsize=(10, 8))
@@ -89,6 +127,12 @@ class Dataset:
                 sns.boxplot(data=self.df.select_dtypes(include=['float64', 'int64']))
             case _:
                 raise ValueError
+
+    """
+    Преобразует данные в формат, подходящий для выбранной библиотеки ('tensorflow' - по умолчанию, 'pytorch', 'numpy').
+    library: Библиотека для преобразования.
+    Возвращает преобразованные данные.
+    """
 
     def transform(self, library='tensorflow'):
         if library == 'tensorflow':
