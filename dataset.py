@@ -11,10 +11,16 @@ class Dataset:
     def __init__(self, df):
         self.df = df
 
+    def info(self):
+        return {
+            'Type': self.df.dtypes,
+            'Missing values': self.df.isnull().sum()
+        }
+
     def check_categorical(self, threshold_of_num_cat: int = None):
         threshold_of_num_cat = threshold_of_num_cat or self.df.shape[0]
 
-        def is_categorical(column):
+        def _is_categorical(column):
             if column.dtype in ('category', 'bool'):
                 return True
             elif column.dtype == 'object':
@@ -24,7 +30,7 @@ class Dataset:
             # other datatypes: 'int64', 'float64', 'timedelta[ns]'
             return len(column.unique()) <= threshold_of_num_cat
 
-        return [column for column in self.df.columns if is_categorical(column)]
+        return [column for column in self.df.columns if _is_categorical(column)]
 
     def eval_categorical(self, categorical_names, strategy='Onehot'):
         if strategy == 'Onehot':
@@ -43,18 +49,46 @@ class Dataset:
             raise ValueError("strategy must be 'Onehot' or 'Label'")
 
     def preparation(self, threshold_of_num_cat: int = None, strategy='Onehot'):
-        for column in self.df.select_dtypes(include=['float64', 'int64']).columns:
-            if self.df[column].isnull().sum() > 0:
-                self.df[column].fillna(self.df[column].mean(), inplace=True)
+        self.fill_missing(strategy="mean")
         categorical = self.check_categorical(threshold_of_num_cat=threshold_of_num_cat)
         self.eval_categorical(categorical, strategy)
 
-    def display(self, column=None):
+    def fill_missing(self, strategy='mean', value=None):
+        for column in self.df.select_dtypes(include=['float64', 'int64']).columns:
+            if self.df[column].isnull().sum() > 0:
+                match strategy:
+                    case "mean":
+                        self.df[column].fillna(self.df[column].mean(), inplace=True)
+                    case "median":
+                        self.df[column].fillna(self.df[column].median(), inplace=True)
+                    case "constant":
+                        if value is not None:
+                            self.df[column].fillna(value, inplace=True)
+
+    def display(self, plot_type="Hist", column=None):
         if column:
-            self.df[column].plot(kind='hist', title=f'Histogram of {column}')
+            self._display_column_plot(plot_type, column)
         else:
-            self.df.hist(figsize=(10, 8))
+            self._display_all_columns_plot(plot_type)
         plt.show()
+
+    def _display_column_plot(self, plot_type, column):
+        match plot_type:
+            case "Hist":
+                self.df[column].plot(kind='hist', title=f'Histogram of {column}')
+            case "Box":
+                sns.boxplot(x=self.df[column])
+            case _:
+                raise ValueError
+
+    def _display_all_columns_plot(self, plot_type):
+        match plot_type:
+            case "Hist":
+                self.df.hist(figsize=(10, 8))
+            case "Box":
+                sns.boxplot(data=self.df.select_dtypes(include=['float64', 'int64']))
+            case _:
+                raise ValueError
 
     def transform(self, library='tensorflow'):
         if library == 'tensorflow':
@@ -64,4 +98,4 @@ class Dataset:
         elif library == 'numpy':
             return self.df.values
 
-        raise ValueError("Wrong library! Choose 'tensorflow', 'pytorch', or 'numpy'")
+        raise ValueError("Wrong library! Choose from 'tensorflow', 'pytorch', or 'numpy'")
