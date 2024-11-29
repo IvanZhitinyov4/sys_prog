@@ -1,85 +1,43 @@
 import pandas as pd
 from matplotlib import pyplot as plt
-from sklearn import preprocessing
-import seaborn as sns
+from sklearn.preprocessing import OneHotEncoder, LabelEncoder
+from sklearn.model_selection import KFold, StratifiedKFold
 import tensorflow as tf
 import torch
+import numpy as np
+from scipy import stats
 
 
 class Dataset:
     def __init__(self, df):
         self.df = df
 
-    def info(self):  #Возвращает информацию о типе данных и количестве пропущенных значений в каждом столбце.
-        return {
-            'Type': self.df.dtypes,
-            'Missing values': self.df.isnull().sum()
-        }
+    def __clear_empty_rows(self):
+        self.df = self.df.dropna(how='all')
 
-    """
-    Определяет, какие столбцы являются категориальными
-    threshold_of_num_cat (int): Порог для определения категориальности столбца.
-    Возвращает список категориальных столбцов.
-    """
+    def __clear_outliers(self):
+        for column in self.df.select_dtypes(include=["int64", "float64"]).columns:
+            z_scores = np.abs(stats.zscore(self.df[column]))
+            self.df = self.df[(z_scores < 3)]
 
-    def check_categorical(self, threshold_of_num_cat: int = None):
-        threshold_of_num_cat = threshold_of_num_cat or self.df.shape[0]
-        """
-        Проверяет, является ли столбец категориальным.
-        column (pd.Series): Столбец DataFrame.
-        Возвращает True, если столбец категориальный, иначе False.
-        """
-
-        def _is_categorical(column):
-            if column.dtype in ('category', 'bool'):
-                return True
-            elif column.dtype == 'object':
-                return len(column.astype(str).unique()) <= threshold_of_num_cat
-            elif column.dtype == 'float64':
-                return len(column.round(10).unique()) <= threshold_of_num_cat
-            return len(column.unique()) <= threshold_of_num_cat
-
-        return [column for column in self.df.columns if _is_categorical(column)]
-
-    """
-    Преобразует категориальные столбцы в числовые.
-    categorical_names (list): Список категориальных столбцов.
-    strategy (str): Стратегия преобразования ('Onehot' или 'Label').
-    """
-
-    def eval_categorical(self, categorical_names, strategy='Onehot'):
-        if strategy == 'Onehot':
-            encoder = preprocessing.OneHotEncoder()
-            for col in categorical_names:
-                sub = encoder.fit_transform(self.df[col].to_numpy().reshape(-1, 1))
-                df_encoded = pd.DataFrame(sub, columns=encoder.get_feature_names_out([col]))
-                self.df = pd.concat([self.df, df_encoded], axis=1)
-
-        elif strategy == 'Label':
-            encoder = preprocessing.LabelEncoder()
-            for col in categorical_names:
-                self.df[col + '_labeled'] = encoder.fit_transform(self.df[col].to_numpy().reshape(-1, 1))
+    def __encode_categorical_features(self, encoding_type='Onehot'):
+        categorical_features = self.df.select_dtypes(include=['object']).columns.tolist()
+        if categorical_features:
+            match encoding_type:
+                case 'Onehot':
+                    encoder = OneHotEncoder(sparse_output=False)
+                    self.encoded_data = pd.DataFrame(encoder.fit_transform(self.df[categorical_features]),
+                                                     columns=encoder.get_feature_names_out(categorical_features))
+                case 'Label':
+                    encoder = LabelEncoder()
+                    self.encoded_data = self.df[categorical_features].apply(encoder.fit_transform)
+                case _:
+                    raise ValueError
 
         else:
-            raise ValueError("strategy must be 'Onehot' or 'Label'")
+            print('Categorical features not found')
 
-    """
-    Подготавливает данные: заполняет пропущенные значения и преобразует категориальные столбцы.
-    strategy (str): Стратегия преобразования ('Onehot' или 'Label').
-    """
-
-    def preparation(self, threshold_of_num_cat: int = None, strategy='Onehot'):
-
-        self.fill_missing(strategy="mean")
-        categorical = self.check_categorical(threshold_of_num_cat=threshold_of_num_cat)
-        self.eval_categorical(categorical, strategy)
-
-    """
-    Заполняет пропущенные значения в числовых столбцах.
-    value (any): Значение для заполнения, если стратегия 'constant'.
-    """
-
-    def fill_missing(self, strategy='mean', value=None):
+    def __fill_missing(self, strategy='mean', value=None):
         for column in self.df.select_dtypes(include=['float64', 'int64']).columns:
             if self.df[column].isnull().sum() > 0:
                 match strategy:
@@ -91,48 +49,28 @@ class Dataset:
                         if value is not None:
                             self.df[column].fillna(value, inplace=True)
 
-    """
-    Отображает графики для столбцов данных.
-    plot_type (str): Тип графика ('Hist' или 'Box').
-    column (str): Имя столбца для отображения. Если None, отображаются все столбцы.
-    """
+    def preparing(self, clear_type="z", strategy='Onehot'):
+        self.__clear_empty_rows()
+        self.__fill_missing(clear_type)
+        self.__clear_outliers()
+        self.__encode_categorical_features(strategy)
 
-    def display(self, plot_type="Hist", column=None):
-        if column:
-            self._display_column_plot(plot_type, column)
+    def prepare_for_cross_validation(self, n_splits=5, stratify_by=None):
+        if stratify_by and stratify_by in self.df.columns:
+            skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+            splits = skf.split(self.df, self.df[stratify_by])
         else:
-            self._display_all_columns_plot(plot_type)
+            kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+            splits = kf.split(self.df)
+        return [(self.df.iloc[train_idx], self.df.iloc[test_idx]) for train_idx, test_idx in splits]
+
+    def display(self, column=None):
+        if column:
+            self.df[column].plot(kind='hist', title=f'Histogram of {column}')
+            plt.title(f'Histogram of {column}')
+        else:
+            self.df.hist(figsize=(10, 8))
         plt.show()
-
-    """
-    Отображает график для конкретного столбца.
-    plot_type (str): Тип графика ('Hist' или 'Box').
-    column (str): Имя столбца для отображения.
-    """
-
-    def _display_column_plot(self, plot_type, column):
-        match plot_type:
-            case "Hist":
-                self.df[column].plot(kind='hist', title=f'Histogram of {column}')
-            case "Box":
-                sns.boxplot(x=self.df[column])
-            case _:
-                raise ValueError
-
-    def _display_all_columns_plot(self, plot_type):  #Отображает график всех столбцов
-        match plot_type:
-            case "Hist":
-                self.df.hist(figsize=(10, 8))
-            case "Box":
-                sns.boxplot(data=self.df.select_dtypes(include=['float64', 'int64']))
-            case _:
-                raise ValueError
-
-    """
-    Преобразует данные в формат, подходящий для выбранной библиотеки ('tensorflow' - по умолчанию, 'pytorch', 'numpy').
-    library: Библиотека для преобразования.
-    Возвращает преобразованные данные.
-    """
 
     def transform(self, library='tensorflow'):
         if library == 'tensorflow':
