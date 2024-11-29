@@ -67,20 +67,19 @@ class Dataset:
                 if self.df[stratify_by].dtype in ('category', 'object', 'bool'):
                     # Стратификация по категориальному признаку
                     kf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
-                    for train_index, test_index in kf.split(self.df, self.df[stratify_by]):
-                        yield train_index, test_index
+                    return [(self.df.iloc[train_index], self.df.iloc[test_index])
+                            for train_index, test_index in kf.split(self.df, self.df[stratify_by])]
                 else:
                     # Стратификация по непрерывному признаку
                     kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
-                    for train_index, test_index in kf.split(self.df):
-                        yield train_index, test_index
+                    return [(self.df.iloc[train_index], self.df.iloc[test_index]) for train_index, test_index in kf.split(self.df)]
             else:
                 raise ValueError(f"Column '{stratify_by}' not found in DataFrame.")
         else:
             # Без стратификации
             kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
-            for train_index, test_index in kf.split(self.df):
-                yield train_index, test_index
+            return [(self.df.iloc[train_index], self.df.iloc[test_index])
+                    for train_index, test_index in kf.split(self.df)]
 
     def display(self, column=None):
         if column:
@@ -92,11 +91,12 @@ class Dataset:
         plt.show()
 
     def transform(self, library='tensorflow'):
-        if library == 'tensorflow':
-            return tf.convert_to_tensor(self.df.values)
-        elif library == 'pytorch':
-            return torch.tensor(self.df.values)
-        elif library == 'numpy':
-            return self.df.values
-
-        raise ValueError("Wrong library! Choose from 'tensorflow', 'pytorch', or 'numpy'")
+        match library:
+            case 'tensorflow':
+                return tf.convert_to_tensor(self.df.values)
+            case 'torch':
+                return torch.tensor(self.df.values)
+            case 'numpy':
+                return self.df.values
+            case _:
+                raise ValueError("Wrong library! Choose from 'tensorflow', 'pytorch', or 'numpy'")
