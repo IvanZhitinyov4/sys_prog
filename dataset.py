@@ -10,29 +10,35 @@ from scipy import stats
 
 class Dataset:
     def __init__(self, df):
+        # Инициализация датасета
         self.df = df
 
     def __clear_empty_rows(self):
+        # Чистим все пустые строки
         self.df = self.df.dropna(how='all')
 
     def __clear_outliers(self):
+        # Чистим все выбросы из датасета по z оценке
         for column in self.df.select_dtypes(include=["int64", "float64"]).columns:
             z_scores = np.abs(stats.zscore(self.df[column]))
             self.df = self.df[(z_scores < 3)]
 
-    def __encode_categorical_features(self, encoding_type='Onehot'):
+    def __encode_categorical_features(self, encoding_type='Onehot'):    # кодируем категориальные признаки
+        # определяем столбцы, содержащие категориальные признаки
         categorical_features = self.df.select_dtypes(include=['object']).columns.tolist()
+        # если есть
         if categorical_features:
+            # проверяем каким способом кодируем кат. признаков
             match encoding_type:
-                case 'Onehot':
+                case 'Onehot':      # Onehot кодирует данные в бинарные векторы
                     encoder = OneHotEncoder(sparse_output=False)
                     self.encoded_data = pd.DataFrame(encoder.fit_transform(self.df[categorical_features]),
                                                      columns=encoder.get_feature_names_out(categorical_features))
-                case 'Label':
+                case 'Label':   # Label присваивает каждому кат. признаку номер
                     encoder = LabelEncoder()
                     self.encoded_data = self.df[categorical_features].apply(encoder.fit_transform)
                 case _:
-                    raise ValueError
+                    raise ValueError("Wrong encoding type! Choose from 'Onehot' or 'Label")
 
         else:
             print('Categorical features not found')
@@ -49,20 +55,32 @@ class Dataset:
                         if value is not None:
                             self.df[column].fillna(value, inplace=True)
 
-    def preparing(self, clear_type="z", strategy='Onehot'):
+    def preparing(self, strategy='mean', encoding_type='Onehot'):
         self.__clear_empty_rows()
-        self.__fill_missing(clear_type)
+        self.__fill_missing(strategy)
         self.__clear_outliers()
-        self.__encode_categorical_features(strategy)
+        self.__encode_categorical_features(encoding_type)
 
-    def prepare_for_cross_validation(self, n_splits=5, stratify_by=None):
-        if stratify_by and stratify_by in self.df.columns:
-            skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
-            splits = skf.split(self.df, self.df[stratify_by])
+    def prepare_for_cross_validation(self, n_splits=5, stratify_by=None):   # Подготавливаем данные для кроссвалидирования (разбиение на n)
+        if stratify_by is not None:
+            if stratify_by in self.df.columns:
+                if self.df[stratify_by].dtype in ('category', 'object', 'bool'):
+                    # Стратификация по категориальному признаку
+                    kf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+                    for train_index, test_index in kf.split(self.df, self.df[stratify_by]):
+                        yield train_index, test_index
+                else:
+                    # Стратификация по непрерывному признаку
+                    kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+                    for train_index, test_index in kf.split(self.df):
+                        yield train_index, test_index
+            else:
+                raise ValueError(f"Column '{stratify_by}' not found in DataFrame.")
         else:
+            # Без стратификации
             kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
-            splits = kf.split(self.df)
-        return [(self.df.iloc[train_idx], self.df.iloc[test_idx]) for train_idx, test_idx in splits]
+            for train_index, test_index in kf.split(self.df):
+                yield train_index, test_index
 
     def display(self, column=None):
         if column:
