@@ -70,6 +70,7 @@ class Dataset:
             plt.title(f'Histogram of {column}')
         else:
             self.df.hist(figsize=(10, 8))
+            plt.title(f'Histogram of all columns')
         plt.show()
 
     def transform(self, library='tensorflow'):

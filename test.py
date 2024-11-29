@@ -1,8 +1,9 @@
 from dataset import Dataset
 import pandas as pd
 
-path = "/home/mrnavi/Documents/Depression Student Dataset.csv"
-df = pd.read_csv(path)
+df = pd.DataFrame({
+
+})
 
 ds = Dataset(df)
 
@@ -12,4 +13,4 @@ ds.display()
 
 ds.prepare_for_cross_validation(n_splits=2, stratify_by="area")
 
-ds.transform("torch")
+ds.transform(library="torch")
