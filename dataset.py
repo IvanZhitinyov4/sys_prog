@@ -91,12 +91,13 @@ class Dataset:
         plt.show()
 
     def transform(self, library='tensorflow'):
+        data = self.df.values
         match library:
             case 'tensorflow':
-                return tf.convert_to_tensor(self.df.values)
-            case 'torch':
-                return torch.tensor(self.df.values)
+                return tf.convert_to_tensor(data)
+            case 'pytorch':
+                return torch.tensor(data)
             case 'numpy':
-                return self.df.values
+                return data
             case _:
                 raise ValueError("Wrong library! Choose from 'tensorflow', 'pytorch', or 'numpy'")

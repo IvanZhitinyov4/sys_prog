@@ -17,4 +17,4 @@ ds.display()
 
 print(ds.prepare_for_cross_validation(n_splits=2, stratify_by="area"))
 
-ds.transform(library="torch")
+ds.transform(library="tensorflow")
