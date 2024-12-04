@@ -3,7 +3,7 @@ from fractions import Fraction
 
 
 class Rational:
-    def __init__(self, numerator=0, denominator=1):
+    def __init__(self, numerator: int | Fraction, denominator=1):
         if denominator == 0:
             raise ValueError("Denominator cannot be zero")
         self.fraction = Fraction(numerator, denominator)
@@ -46,6 +46,9 @@ class Rational:
         self.fraction /= no.fraction
         return self
 
+    def __neg__(self):
+        return Rational(-self.fraction)
+
     def __str__(self):
         return str(self.fraction)
 
@@ -54,7 +57,7 @@ class Rational:
 
 
 class Complex:
-    def __init__(self, real, imag):
+    def __init__(self, real=Rational(0), imag=Rational(0)):
         self.real = real
         self.imag = imag
 
@@ -118,9 +121,6 @@ class Complex:
         self.real, self.imag = real, imag
         return self
 
-    def __neg__(self):
-        return Complex(-self.real, -self.imag)
-
     def __str__(self):
         real_str = str(self.real)
         imag_str = str(abs(self.imag)) + 'i' if self.imag != 0 else ''
@@ -132,7 +132,7 @@ class Complex:
 
     def pow(self, n):
         if n == 0:
-            return 1
+            return Complex(Rational(1))
         result = Complex(self.real, self.imag)
         for _ in range(1, n):
             result *= self
