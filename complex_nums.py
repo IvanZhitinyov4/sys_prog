@@ -1,6 +1,7 @@
 import math
+from fractions import Fraction
 
-"""
+
 class Rational:
     def __init__(self, numerator=0, denominator=1):
         if denominator == 0:
@@ -45,15 +46,11 @@ class Rational:
         self.fraction /= no.fraction
         return self
 
-    def __neg__(self):
-        return Rational(-1 * self.fraction)
-
     def __str__(self):
         return str(self.fraction)
 
     def __repr__(self):
         return f"Rational({self.fraction.numerator}, {self.fraction.denominator})"
-    """
 
 
 class Complex:
