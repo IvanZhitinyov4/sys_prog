@@ -121,6 +121,9 @@ class Complex:
         self.real, self.imag = real, imag
         return self
 
+    def __neg__(self):
+        return Complex(-self.real, -self.imag)
+
     def __str__(self):
         real_str = str(self.real)
         imag_str = str(abs(self.imag)) + 'i' if self.imag != 0 else ''
