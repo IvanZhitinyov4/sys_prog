@@ -57,7 +57,7 @@ class Rational:
 
 
 class Complex:
-    def __init__(self, real=Rational(0), imag=Rational(0)):
+    def __init__(self, real: int | Rational, imag: int | Rational):
         self.real = real
         self.imag = imag
 
@@ -132,7 +132,7 @@ class Complex:
 
     def pow(self, n):
         if n == 0:
-            return Complex(Rational(1))
+            return Complex(Rational(1), 0)
         result = Complex(self.real, self.imag)
         for _ in range(1, n):
             result *= self
