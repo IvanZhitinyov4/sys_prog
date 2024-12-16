@@ -15,7 +15,25 @@ class Dataset:
 
     def __clear_empty_rows(self):
         # Чистим все пустые строки
-        self.df = self.df.dropna(how='all')
+        return self.df.isnull().sum()
+
+    def __change_nan(self, change_to=None):
+        num_cols = self.df.select_dtypes(include=['int64', 'float64']).columns
+        if change_to:
+            match change_to:
+                case 'median':
+                    self.df[num_cols] = self.df.fillna(self.df[num_cols].median())
+                case 'mode':
+                    self.df[num_cols] = self.df.fillna(self.df[num_cols].mode().iloc[0])
+                case 'mean':
+                    self.df[num_cols] = self.df.fillna(self.df[num_cols].mean(skipna=True))
+                case 'const':
+                    con = int(input())
+                    self.df[num_cols] = self.df.fillna(con)
+                case _:
+                    raise ValueError('Choose from "median", "mode", "mean" or ""const')
+        else:
+            self.df = self.df.dropna(subset=num_cols)
 
     def __clear_outliers(self):
         # Чистим все выбросы из датасета по z оценке
@@ -55,8 +73,9 @@ class Dataset:
                         if value is not None:
                             self.df[column].fillna(value, inplace=True)
 
-    def preparing(self, strategy='mean', encoding_type='Onehot'):
+    def preparing(self, strategy='mean', encoding_type='Onehot', change_to=None):
         self.__clear_empty_rows()
+        self.__change_nan(change_to)
         self.__fill_missing(strategy)
         self.__clear_outliers()
         self.__encode_categorical_features(encoding_type)
