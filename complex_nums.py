@@ -5,45 +5,50 @@ from fractions import Fraction
 class Rational:
     def __init__(self, numerator: int | Fraction, denominator=1):
         if denominator == 0:
-            raise ValueError("Denominator cannot be zero")
+            raise ZeroDivisionError("Division by zero")
         self.fraction = Fraction(numerator, denominator)
 
-    def __add__(self, no):
-        return Rational(self.fraction + no.fraction)
+    def __add__(self, n: int | Fraction):
+        '''
 
-    def __sub__(self, no):
-        return Rational(self.fraction - no.fraction)
+        :param n:
+        :return:
+        '''
+        return Rational(self.fraction + n.fraction)
 
-    def __mul__(self, no):
-        return Rational(self.fraction * no.fraction)
+    def __sub__(self, n):
+        return Rational(self.fraction - n.fraction)
 
-    def __truediv__(self, no):
-        if no.fraction == 0:
-            raise ValueError("Division by zero")
-        return Rational(self.fraction / no.fraction)
+    def __mul__(self, n):
+        return Rational(self.fraction * n.fraction)
 
-    def __eq__(self, no):
-        return self.fraction == no.fraction
+    def __truediv__(self, n):
+        if n.fraction == 0:
+            raise ZeroDivisionError("Division by zero")
+        return Rational(self.fraction / n.fraction)
 
-    def __ne__(self, no):
-        return not self.__eq__(no)
+    def __eq__(self, n):
+        return self.fraction == n.fraction
 
-    def __iadd__(self, no):
-        self.fraction += no.fraction
+    def __ne__(self, n):
+        return not self.__eq__(n)
+
+    def __iadd__(self, n):
+        self.fraction += n.fraction
         return self
 
-    def __isub__(self, no):
-        self.fraction -= no.fraction
+    def __isub__(self, n):
+        self.fraction -= n.fraction
         return self
 
-    def __imul__(self, no):
-        self.fraction *= no.fraction
+    def __imul__(self, n):
+        self.fraction *= n.fraction
         return self
 
-    def __itruediv__(self, no):
-        if no.fraction == 0:
-            raise ValueError("Division by zero")
-        self.fraction /= no.fraction
+    def __itruediv__(self, n):
+        if n.fraction == 0:
+            raise ZeroDivisionError("Division by zero")
+        self.fraction /= n.fraction
         return self
 
     def __neg__(self):
@@ -57,97 +62,103 @@ class Rational:
 
 
 class Complex:
-    def __init__(self, real: int | Rational, imag: int | Rational):
-        self.real = real
-        self.imag = imag
+    @property
+    def _image_part(self):
+        return self.__image_part
+
+    def __init__(self, real: int | Rational, image_buf: int | Rational) -> None:
+        self._real = real
+        self._image_part = image_buf
 
     @property
-    def get_real(self):
-        return self.real
+    def real(self):
+        return self._real
+
+    @real.setter
+    def real(self, real):
+        self._real = real
 
     @property
-    def get_imag(self):
-        return self.imag
+    def image_part(self):
+        return self._image_part
 
-    def set_real(self, real):
-        self.real = real
+    @_image_part.setter
+    def _image_part(self, image_buf):
+        self._image_part = image_buf
 
-    def set_imag(self, imag):
-        self.imag = imag
+    def __add__(self, n):
+        return Complex(self.real + n.real, self._image_part + n._image_part)
 
-    def __add__(self, no):
-        return Complex(self.real + no.real, self.imag + no.imag)
+    def __sub__(self, n):
+        return Complex(self.real - n.real, self._image_part - n._image_part)
 
-    def __sub__(self, no):
-        return Complex(self.real - no.real, self.imag - no.imag)
+    def __mul__(self, n):
+        real = self.real * n.real - self._image_part * n._image_part
+        _image_part = self.real * n._image_part + self._image_part * n.real
+        return Complex(real, _image_part)
 
-    def __mul__(self, no):
-        real = self.real * no.real - self.imag * no.imag
-        imag = self.real * no.imag + self.imag * no.real
-        return Complex(real, imag)
+    def __truediv__(self, n):
+        denom = n.real * n.real + n._image_part * n._image_part
+        real = (self.real * n.real + self._image_part * n._image_part) / denom
+        _image_part = (self._image_part * n.real - self.real * n._image_part) / denom
+        return Complex(real, _image_part)
 
-    def __truediv__(self, no):
-        denom = no.real * no.real + no.imag * no.imag
-        real = (self.real * no.real + self.imag * no.imag) / denom
-        imag = (self.imag * no.real - self.real * no.imag) / denom
-        return Complex(real, imag)
+    def __eq__(self, n):
+        return self.real == n.real and self._image_part == n._image_part
 
-    def __eq__(self, no):
-        return self.real == no.real and self.imag == no.imag
+    def __ne__(self, n):
+        return not self.__eq__(n)
 
-    def __ne__(self, no):
-        return not self.__eq__(no)
-
-    def __iadd__(self, no):
-        self.real += no.real
-        self.imag += no.imag
+    def __iadd__(self, n):
+        self.real += n.real
+        self._image_part += n._image_part
         return self
 
-    def __isub__(self, no):
-        self.real -= no.real
-        self.imag -= no.imag
+    def __isub__(self, n):
+        self.real -= n.real
+        self._image_part -= n._image_part
         return self
 
-    def __imul__(self, no):
-        real = self.real * no.real - self.imag * no.imag
-        imag = self.real * no.imag + self.imag * no.real
-        self.real, self.imag = real, imag
+    def __imul__(self, n):
+        real = self.real * n.real - self._image_part * n._image_part
+        _image_part = self.real * n._image_part + self._image_part * n.real
+        self.real, self._image_part = real, _image_part
         return self
 
-    def __itruediv__(self, no):
-        denom = no.real * no.real + no.imag * no.imag
-        real = (self.real * no.real + self.imag * no.imag) / denom
-        imag = (self.imag * no.real - self.real * no.imag) / denom
-        self.real, self.imag = real, imag
+    def __itruediv__(self, n):
+        denom = n.real * n.real + n._image_part * n._image_part
+        real = (self.real * n.real + self._image_part * n._image_part) / denom
+        _image_part = (self._image_part * n.real - self.real * n._image_part) / denom
+        self.real, self._image_part = real, _image_part
         return self
 
     def __neg__(self):
-        return Complex(-self.real, -self.imag)
+        return Complex(-self.real, -self._image_part)
 
     def __str__(self):
-        real_str = str(self.real)
-        imag_str = str(abs(self.imag)) + 'i' if self.imag != 0 else ''
-        sign = ' + ' if self.imag > 0 else ' - ' if self.imag < 0 else ''
+        real_str = str(self._real)
+        imag_str = str(abs(self._image_part)) + 'i' if self._image_part != 0 else ''
+        sign = ' + ' if self._image_part > 0 else ' - ' if self._image_part < 0 else ''
         return real_str + sign + imag_str
 
     def __repr__(self):
-        return f"Complex({self.real}, {self.imag})"
+        return f"Complex({self.real}, {self._image_part})"
 
     def pow(self, n):
         if n == 0:
             return Complex(Rational(1), 0)
-        result = Complex(self.real, self.imag)
+        result = Complex(self.real, self._image_part)
         for _ in range(1, n):
             result *= self
         return result
 
     def arg(self):
-        return math.atan2(self.imag.fraction.numerator / self.imag.fraction.denominator,
+        return math.atan2(self._image_part.fraction.numerator / self._image_part.fraction.denominator,
                           self.real.fraction.numerator / self.real.fraction.denominator)
 
     def abs(self):
         real_part = self.real.fraction.numerator / self.real.fraction.denominator
-        imag_part = self.imag.fraction.numerator / self.imag.fraction.denominator
+        imag_part = self._image_part.fraction.numerator / self._image_part.fraction.denominator
         return math.sqrt(real_part ** 2 + imag_part ** 2)
 
     def __int__(self):
@@ -157,4 +168,12 @@ class Complex:
         return float(self.real.fraction)
 
     def __complex__(self):
-        return complex(float(self.real.fraction), float(self.imag.fraction))
+        return complex(float(self.real.fraction), float(self._image_part.fraction))
+
+    @_image_part.setter
+    def _image_part(self, value):
+        self.__image_part = value
+
+
+n = Complex(1, 3)
+print(n)
