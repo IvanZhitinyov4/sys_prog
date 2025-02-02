@@ -1,6 +1,6 @@
 import unittest
 from fractions import Fraction
-from complex_nums import Rational, Complex
+from com_nums.complex_nums import Rational, Complex
 
 
 class TestRational(unittest.TestCase):
