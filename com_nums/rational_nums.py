@@ -1,25 +1,24 @@
-#from fractions import Fraction
+from fractions import Fraction
+from typing import Union
+
 
 class Rational:
-    def __init__(self, m: int | None, n: int | None):
-        if not isinstance(m, int):
-            raise ValueError()
-        if not isinstance(n, int):
-            raise ValueError()
-        self.__num = m
+    def __init__(self, m: Union[int, float, Fraction] = 0, n: Union[int, float] = 1):
+        if isinstance(m, (int, float)):
+            m = Fraction(m)
+        else:
+            raise ValueError
+        if isinstance(n, (int, float)):
+            n = Fraction(n)
+        else:
+            raise ValueError
         if n == 0:
             raise ZeroDivisionError("Division by zero")
-        self.__den = n
+
+        self.fraction = Fraction(m, n)
 
     def __add__(self, no):
-        if isinstance(no, Rational):
-            return Rational(self.__num * no.__den + self.__den * no.__num,
-                            self.__den * no.__den)
-        elif isinstance(no, int):
-            return Rational(self.__num + no * self.__den,
-                            self.__den)
-        else:
-            raise TypeError("other operand must be an integer or Rational")
+        return Rational(self.fraction + no.fraction)
 
     def __sub__(self, no):
         return Rational(self.fraction - no.fraction)
@@ -56,11 +55,20 @@ class Rational:
         self.fraction /= n.fraction
         return self
 
+    def __pow__(self, power):
+        if power == 0:
+            return Rational(1)
+        return Rational(self.fraction.numerator ** power, self.fraction.denominator ** power)
+
     def __neg__(self):
-        return Rational(-self.__num, self.__den)
+        return Rational(-self.fraction)
 
     def __str__(self):
-        return str(self.__num / self.__den)
+        return str(self.fraction)
 
     def __repr__(self):
-        return f"Rational({self.__num}, {self.__den})"
+        return f"Rational({self.fraction})"
+
+
+mommy = Rational(1, 3)
+print(mommy)
