@@ -6,13 +6,9 @@ from complex_nums import Complex
 
 class TestRationalOperations(unittest.TestCase):
     def test_init(self):
-        c = Complex(1, 2)
-        self.assertEqual(c.real, 1)
-        self.assertEqual(c.image_part, 2)
-
-        c = Complex(Rational(1, 2), Rational(3, 4))
-        self.assertEqual(c.real, Rational(1, 2))
-        self.assertEqual(c.image_part, Rational(3, 4))
+        r = Rational(1, 2)
+        self.assertEqual(r.numerator, 1)
+        self.assertEqual(r.denominator, 2)
 
     def test_addition(self):
         r1 = Rational(1, 2)
@@ -32,9 +28,8 @@ class TestRationalOperations(unittest.TestCase):
         r1 = Rational(2, 3)
         r2 = Rational(3, 4)
         result = r1 * r2
-        self.assertEqual(result.numerator, 6)
-        self.assertEqual(result.denominator, 12)
-        self.assertEqual(result.numerator // result.denominator, 1)
+        self.assertEqual(result.numerator, 1)
+        self.assertEqual(result.denominator, 2)
 
     def test_division(self):
         r1 = Rational(3, 4)
@@ -51,7 +46,7 @@ class TestRationalOperations(unittest.TestCase):
 
     def test_repr(self):
         r = Rational(5, 6)
-        self.assertEqual(repr(r), "5/6")
+        self.assertEqual(repr(r), "Rational(5/6)")
 
     def test_as_float(self):
         r = Rational(3, 4)
@@ -81,6 +76,15 @@ class TestRationalOperations(unittest.TestCase):
 
 
 class TestComplexOperations(unittest.TestCase):
+    def test_init(self):
+        c = Complex(1, 2)
+        self.assertEqual(c.__real, 1)
+        self.assertEqual(c.__image_part, 2)
+
+        c = Complex(Rational(1, 2), Rational(3, 4))
+        self.assertEqual(c.__real, Rational(1, 2))
+        self.assertEqual(c.__image_part, Rational(3, 4))
+
     def test_addition(self):
         z1 = Complex(3, 2)
         z2 = Complex(1, 7)

@@ -4,87 +4,119 @@ from typing import Union
 
 
 class Complex:
-    def __init__(self, real: Union[int, float, Rational], image_buf: Union[int, float, Rational]) -> None:
-        if not isinstance(real, Rational):
-            real = Rational(real)
+    def __init__(self, real: Union[int, float, Rational], image_buf: Union[int, float, Rational] = 0):
+        """
+        Инициализация комплексных чисел
+        :param real: действительная часть
+        :param image_buf: мнимая часть
+        """
         if not isinstance(image_buf, Rational):
             image_buf = Rational(image_buf)
-        self.__real = real
-        self.__image_part = image_buf
+        self.__real = real if isinstance(real, Rational) else Rational(real)
+        self.__image_part = image_buf if isinstance(image_buf, Rational) else Rational(image_buf)
 
+    # Геттеры и сеттеры действ и мним частей
     @property
-    def real(self):
+    def __real(self):
         return self.__real
 
-    @real.setter
-    def real(self, real):
-        self.__real = real
+    @__real.setter
+    def __real(self, value):
+        self.__real = value if isinstance(value, Rational) else Rational(value)
 
     @property
-    def image_part(self):
+    def __image_part(self):
         return self.__image_part
 
-    @image_part.setter
-    def image_part(self, image_buf):
-        self.__image_part = image_buf
+    @__image_part.setter
+    def __image_part(self, value):
+        self.__image_part = value if isinstance(value, Rational) else Rational(value)
 
     def __add__(self, no):
-        return Complex(self.real + no.real, self._image_part + no._image_part)
+        if isinstance(no, (int, float)):
+            no = Complex(no)
+        return Complex(self.__real + no.__real, self.__image_part + no.__image_part)
 
     def __sub__(self, no):
-        return Complex(self.real - no.real, self._image_part - no._image_part)
+        if isinstance(no, (int, float)):
+            no = Complex(no)
+        return Complex(self.__real - no.__real, self.__image_part - no.__image_part)
 
     def __mul__(self, n):
-        real = self.real * n.real - self._image_part * n._image_part
-        _image_part = self.real * n._image_part + self._image_part * n.real
-        return Complex(real, _image_part)
+        if isinstance(n, (int, float)):
+            n = Complex(n)
+        __real = self.__real * n.__real - self.__image_part * n.__image_part
+        __image_part = self.__real * n.__image_part + self.__image_part * n.__real
+        return Complex(__real, __image_part)
 
     def __truediv__(self, n):
-        denom = n.real * n.real + n._image_part * n._image_part
-        real = (self.real * n.real + self._image_part * n._image_part) / denom
-        _image_part = (self._image_part * n.real - self.real * n._image_part) / denom
-        return Complex(real, _image_part)
+        if isinstance(n, (int, float)):
+            n = Complex(n)
+        denom = n.__real * n.__real + n.__image_part * n.__image_part
+        __real = (self.__real * n.__real + self.__image_part * n.__image_part) / denom
+        __image_part = (self.__image_part * n.__real - self.__real * n.__image_part) / denom
+        return Complex(__real, __image_part)
 
     def __eq__(self, n):
-        return self.real == n.real and self._image_part == n._image_part
+        if isinstance(n, (int, float)):
+            n = Complex(n)
+        return self.__real == n.__real and self.__image_part == n.__image_part
 
     def __ne__(self, n):
+        if isinstance(n, (int, float)):
+            n = Complex(n)
         return not self.__eq__(n)
 
     def __iadd__(self, n):
-        self.real += n.real
-        self._image_part += n._image_part
+        if isinstance(n, (int, float)):
+            n = Complex(n)
+        self.__real += n.__real
+        self.__image_part += n.__image_part
         return self
 
     def __isub__(self, n):
-        self.real -= n.real
-        self._image_part -= n._image_part
+        if isinstance(n, (int, float)):
+            n = Complex(n)
+        self.__real -= n.__real
+        self.__image_part -= n.__image_part
         return self
 
     def __imul__(self, n):
-        real = self.real * n.real - self._image_part * n.image_part
-        _image_part = self.real * n.image_part + self._image_part * n.real
-        self.real, self.image_part = real, _image_part
+        if isinstance(n, (int, float)):
+            n = Complex(n)
+        __real = self.__real * n.__real - self.__image_part * n.__image_part
+        __image_part = self.__real * n.__image_part + self.__image_part * n.__real
+        self.__real, self.__image_part = __real, __image_part
         return self
 
     def __itruediv__(self, n):
-        denom = n.real * n.real + n._image_part * n._image_part
-        real = (self.real * n.real + self._image_part * n._image_part) / denom
-        _image_part = (self._image_part * n.real - self.real * n._image_part) / denom
-        self.real, self._image_part = real, _image_part
+        if isinstance(n, (int, float)):
+            n = Complex(n)
+        denom = n.__real * n.__real + n.__image_part * n.__image_part
+        __real = (self.__real * n.__real + self.__image_part * n.__image_part) / denom
+        __image_part = (self.__image_part * n.__real - self.__real * n.__image_part) / denom
+        self.__real, self.__image_part = __real, __image_part
         return self
 
     def __neg__(self):
-        return Complex(-self.real, -self._image_part)
+        return Complex(-self.__real, -self.__image_part)
 
     def __str__(self):
+        """
+        Представление числа в строковом виде
+        :return: строковый вид ком числа
+        """
         real_str = str(self.__real)
-        imag_str = str(abs(self._image_part)) + 'i' if self._image_part != 0 else ''
-        sign = ' + ' if self._image_part > 0 else ' - ' if self._image_part < 0 else ''
+        imag_str = str(abs(self.__image_part)) + 'i' if self.__image_part != 0 else ''
+        sign = ' + ' if self.__image_part > 0 else ' - ' if self.__image_part < 0 else ''
         return real_str + sign + imag_str
 
     def __repr__(self):
-        return f"Complex({self.real}, {self._image_part})"
+        """
+        Представление ком числа как объекта
+        :return: строковое предстаавление ком числа как объекта
+        """
+        return f"Complex({self.__real}, {self.__image_part})"
 
     def __pow__(self, power: int):
         if power == 0:
@@ -92,26 +124,26 @@ class Complex:
         else:
             magnitude = self.abs() ** power
             angle = self.arg() * power
-            real = magnitude * math.cos(angle)
+            __real = magnitude * math.cos(angle)
             imag = magnitude * math.sin(angle)
-            return Complex(real, imag)
+            return Complex(__real, imag)
 
     def arg(self):
-        return math.atan2(self._image_part.fraction.numerator / self._image_part.fraction.denominator,
-                          self.real.fraction.numerator / self.real.fraction.denominator)
+        """
+        Нахождение аргумента - угла между положительной вещественной осью и вектором ком числа
+        :return: угол между положительной вещественной осью и вектором ком числа
+        """
+        return math.atan2(self.__image_part.numerator / self.__image_part.denominator,
+                          self.__real.numerator / self.__real.denominator)
 
     def abs(self):
-        real_part = self.real.fraction.numerator / self.real.fraction.denominator
-        imag_part = self.image_part.fraction.numerator / self.image_part.fraction.denominator
+        """
+        Нахождение модуля ком числа
+        :return: модуль ком числа
+        """
+        real_part = self.__real.numerator / self.__real.denominator
+        imag_part = self.__image_part.numerator / self.__image_part.denominator
         return math.sqrt(real_part ** 2 + imag_part ** 2)
 
-    def __int__(self):
-        return int(self.real.fraction)
-
-    def __float__(self):
-        return float(self.real.fraction)
-
-    def __complex__(self):
-        return complex(float(self.real.fraction), float(self._image_part.fraction))
 
 

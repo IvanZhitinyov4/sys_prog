@@ -1,74 +1,158 @@
-from fractions import Fraction
-from typing import Union
+import math
 
 
 class Rational:
-    def __init__(self, m: Union[int, float, Fraction] = 0, n: Union[int, float] = 1):
-        if isinstance(m, (int, float)):
-            m = Fraction(m)
-        else:
-            raise ValueError
-        if isinstance(n, (int, float)):
-            n = Fraction(n)
-        else:
-            raise ValueError
+    def __init__(self, m: int | float = 0, n: int | float = 1):
+
+        '''
+        Инициализация класса
+        :param m: numerator
+        :param n: denoominator
+        '''
+
+        if not isinstance(m, (int, float)):
+            raise ValueError("Numerator must be integer or float")
+        if not isinstance(n, (int, float)):
+            raise ValueError("Denominator must be integer or float")
         if n == 0:
             raise ZeroDivisionError("Division by zero")
 
-        self.fraction = Fraction(m, n)
+        # Упрощаем дробь
+        common_div = math.gcd(m, n)
+        self.__numerator = m // common_div
+        self.__denominator = n // common_div
 
-    def __add__(self, no):
-        return Rational(self.fraction + no.fraction)
+    # Геттеры и сеттеры для числителя и знаменателя
+    @property
+    def numerator(self):
+        return self.__numerator
 
-    def __sub__(self, no):
-        return Rational(self.fraction - no.fraction)
+    @property
+    def denominator(self):
+        return self.__denominator
 
-    def __mul__(self, no):
-        return Rational(self.fraction * no.fraction)
+    @numerator.setter
+    def numerator(self, value: int | float):
+        if not isinstance(value, (int, float)):
+            raise ValueError
+        self.__numerator = value
 
-    def __truediv__(self, no):
-        if no.fraction == 0:
-            raise ZeroDivisionError("Division by zero")
-        return Rational(self.fraction / no.fraction)
+    @denominator.setter
+    def denominator(self, value: int | float):
+        if not isinstance(value, (int, float)):
+            raise ValueError
+        if value == 0:
+            raise ZeroDivisionError
+        self.__denominator = value
 
-    def __eq__(self, n):
-        return self.fraction == n.fraction
+    def __add__(self, other):
+        if isinstance(other, Rational):
+            return Rational(self.__numerator * other.__denominator + self.__denominator * other.__numerator,
+                            self.__denominator * other.__denominator)
+        if isinstance(other, (int, float)):
+            return Rational(self.__numerator + other * self.__denominator,
+                            self.__denominator)
+        else:
+            raise TypeError("Unknown datatype")
 
-    def __ne__(self, n):
-        return not self.__eq__(n)
+    def __sub__(self, other):
+        if isinstance(other, Rational):
+            return Rational(self.numerator * other.denominator - self.denominator * other.numerator,
+                            self.denominator * other.denominator)
+        elif isinstance(other, (int, float)):
+            return Rational(self.numerator - other * self.denominator,
+                            self.denominator)
+        else:
+            raise TypeError("Unknown datatype")
 
-    def __iadd__(self, n):
-        self.fraction += n.fraction
+    def __mul__(self, other):
+        if isinstance(other, Rational):
+            return Rational(self.numerator * other.numerator, self.denominator * other.denominator)
+        elif isinstance(other, (int, float)):
+            return Rational(self.numerator * other, self.denominator)
+        else:
+            raise TypeError("Unknown datatype")
+
+    def __truediv__(self, other):
+        if isinstance(other, Rational):
+            return Rational(self.numerator * other.denominator, self.denominator * other.numerator)
+        elif isinstance(other, (int, float)):
+            if other == 0:
+                raise ZeroDivisionError("Division by zero")
+            else:
+                return Rational(self.numerator / other, self.denominator)
+        else:
+            raise TypeError("Unknown datatype")
+
+    def __eq__(self, other):
+        if isinstance(other, Rational):
+            return (self.numerator * other.denominator) == (self.denominator * other.numerator)
+        elif isinstance(other, (int, float)):
+            return self.numerator == (other * self.denominator)
+        else:
+            raise TypeError("Unknown datatype")
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __iadd__(self, other):
+        if isinstance(other, Rational):
+            self.numerator = self.numerator * other.denominator + self.denominator * other.numerator
+            self.denominator = self.denominator * other.denominator
+        elif isinstance(other, (int, float)):
+            self.numerator = self.numerator + other * self.denominator
+        else:
+            raise TypeError("Unknown datatype")
         return self
 
-    def __isub__(self, n):
-        self.fraction -= n.fraction
+    def __isub__(self, other):
+        if isinstance(other, Rational):
+            self.numerator = self.numerator * other.denominator - self.denominator * other.numerator
+            self.denominator = self.denominator * other.denominator
+        elif isinstance(other, (int, float)):
+            self.numerator = self.numerator - other * self.denominator
+        else:
+            raise TypeError("Unknown datatype")
         return self
 
-    def __imul__(self, n):
-        self.fraction *= n.fraction
+    def __imul__(self, other):
+        if isinstance(other, Rational):
+            self.numerator = self.numerator * other.numerator
+            self.denominator = self.denominator * other.denominator
+        elif isinstance(other, (int, float)):
+            self.numerator = self.numerator * other
+        else:
+            raise TypeError("Unknown datatype")
         return self
 
-    def __itruediv__(self, n):
-        if n.fraction == 0:
-            raise ZeroDivisionError("Division by zero")
-        self.fraction /= n.fraction
+    def __itruediv__(self, other):
+        if isinstance(other, Rational):
+            self.numerator = self.numerator * other.denominator
+            self.denominator = self.denominator * other.numerator
+        elif isinstance(other, (int, float)):
+            if other == 0:
+                raise ZeroDivisionError("Division by zero")
+            else:
+                self.numerator = self.numerator / other
+        else:
+            raise TypeError("Unknown datatype")
         return self
 
-    def __pow__(self, power):
-        if power == 0:
+    def __pow__(self, power: int):
+        if not isinstance(power, int):
+            raise TypeError("Power must be an integer")
+        if power < 0:
+            return Rational(self.denominator ** abs(power), self.numerator ** abs(power))
+        elif power > 0:
+            return Rational(self.numerator ** power, self.denominator ** power)
+        else:
             return Rational(1)
-        return Rational(self.fraction.numerator ** power, self.fraction.denominator ** power)
 
     def __neg__(self):
-        return Rational(-self.fraction)
+        return Rational(-self.numerator, self.denominator)
 
     def __str__(self):
-        return str(self.fraction)
+        return str(self.numerator / self.denominator)
 
     def __repr__(self):
-        return f"Rational({self.fraction})"
-
-
-mommy = Rational(1, 3)
-print(mommy)
+        return f"Rational({self.numerator}/{self.denominator})"
